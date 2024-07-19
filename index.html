@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+
+
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculate CDL</title>
+    <title>جدول حساب CDL</title>
     <style>
         table {
             width: 100%;
@@ -34,234 +35,107 @@
         .delete-btn:hover {
             background-color: #cc0000;
         }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+    <h1>جدول حساب CDL</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>رقم</th>
+                <th>عدد العدادات</th>
+                <th>فئة</th>
+                <th>الجهد</th>
+                <th>المساحة المدخلة</th>
+                <th>القاطع</th>
+                <th>DF</th>
+                <th>CF</th>
+                <th>CDL (KVA)</th>
+                <th>حذف</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <button onclick="addFacility()">إضافة مرفق</button>
+    <button onclick="calculateValues()">حساب القيم</button>
 
-<h1>جدول حساب CDL</h1>
-<table>
-    <thead>
-        <tr>
-            <th>رقم</th>
-            <th>عدد العدادات</th>
-            <th>فئة</th>
-            <th>الجهد</th>
-            <th>المساحة المدخلة</th>
-            <th>القاطع</th>
-            <th>DF</th>
-            <th>CF</th>
-            <th>CDL (KVA)</th>
-            <th>حذف</th>
-        </tr>
-    </thead>
-    <tbody>
-    </tbody>
-</table>
-<button onclick="addFacility()">إضافة مرفق</button>
-<button onclick="calculateValues()">حساب القيم</button>
+    <div class="result" id="result"></div>
 
-<script>
-    let shouldCalculate = false;
+    <script>
+        let shouldCalculate = false;
+        const dfValues = {
+            C1: 0.5, C2: 0.6, C3: 0.6, C4: 0.65, C5: 0.6, C6: 0.6, C7: 0.6,
+            C8: 0.7, C9: 0.8, C10: 0.65, C11: 0.7, C12: 0.65, C13: 0.7,
+            C14: 0.8, C15: 0.8, C16: 0.7, C17: 0.8, C18: 0.7, C19: 0.6,
+            C20: 0.7, C21: 0.8, C22: 0.8, C23: 0.8, C24: 0.6, C25: 0.7,
+            C26: 0.7, C27: 0.8, C28: 0.6, C29: 0.8
+        };
+        const densityFactors = {
+            C1: 0.116, C3: 0.14, C4: 0.192, C5: 0.204, C6: 0.188,
+            C7: 0.176, C8: 0.144, C9: 0.148, C10: 0.08, C11: 0.048,
+            C12: 0.04, C13: 0.024, C14: 0.004, C15: 0.004, C16: 0.0032,
+            C17: 0.0024, C18: 0.2, C19: 0.18, C20: 0.196, C21: 0.224,
+            C22: 0.064, C23: 0.208, C24: 0.056, C25: 0.184, C26: 0.16,
+            C27: 0.104, C28: 0.072, C29: 0.236
+        };
+        const breakerValues = [20, 30, 40, 70, 100, 125, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1600, 2500];
+        const c1Data = [
+            { areaMin: 25, areaMax: 125, breaker: 20 },
+            { areaMin: 126, areaMax: 175, breaker: 30 },
+            { areaMin: 176, areaMax: 250, breaker: 40 },
+            { areaMin: 251, areaMax: 325, breaker: 50 },
+            { areaMin: 326, areaMax: 475, breaker: 70 },
+            { areaMin: 476, areaMax: 725, breaker: 100 },
+            { areaMin: 726, areaMax: 900, breaker: 125 },
+            { areaMin: 901, areaMax: 1125, breaker: 150 },
+            { areaMin: 1126, areaMax: 1500, breaker: 200 },
+            { areaMin: 1501, areaMax: 1900, breaker: 250 },
+            { areaMin: 1901, areaMax: 2300, breaker: 300 },
+            { areaMin: 2301, areaMax: 3000, breaker: 400 },
+            { areaMin: 3001, areaMax: 3600, breaker: 500 },
+            { areaMin: 3601, areaMax: 4400, breaker: 600 },
+            { areaMin: 4401, areaMax: 6000, breaker: 800 }
+        ];
+        const c2Data = [
+            { areaMin: 25, areaMax: 75, breaker: 20 },
+            { areaMin: 76, areaMax: 125, breaker: 30 },
+            { areaMin: 126, areaMax: 175, breaker: 40 },
+            { areaMin: 176, areaMax: 225, breaker: 50 },
+            { areaMin: 226, areaMax: 325, breaker: 70 },
+            { areaMin: 326, areaMax: 475, breaker: 100 },
+            { areaMin: 476, areaMax: 600, breaker: 125 },
+            { areaMin: 601, areaMax: 725, breaker: 150 },
+            { areaMin: 726, areaMax: 1000, breaker: 200 },
+            { areaMin: 1001, areaMax: 1125, breaker: 250 },
+            { areaMin: 1126, areaMax: 1400, breaker: 300 },
+            { areaMin: 1401, areaMax: 1850, breaker: 400 },
+            { areaMin: 1851, areaMax: 2300, breaker: 500 },
+            { areaMin: 2301, areaMax: 2700, breaker: 600 },
+            { areaMin: 2701, areaMax: 3800, breaker: 800 }
+        ];
 
-    const dfValues = {
-        C1: 0.5, C2: 0.6, C3: 0.6, C4: 0.65, C5: 0.6, C6: 0.6, C7: 0.6, C8: 0.7, C9: 0.8, C10: 0.65,
-        C11: 0.7, C12: 0.65, C13: 0.7, C14: 0.8, C15: 0.8, C16: 0.7, C17: 0.8, C18: 0.7, C19: 0.6, 
-        C20: 0.7, C21: 0.8, C22: 0.8, C23: 0.8, C24: 0.6, C25: 0.7, C26: 0.7, C27: 0.8, C28: 0.6, C29: 0.8
-    };
-
-    const densityFactors = {
-        C1: 0.116, C3: 0.14, C4: 0.192, C5: 0.204, C6: 0.188, C7: 0.176, C8: 0.144, C9: 0.148, C10: 0.08,
-        C11: 0.048, C12: 0.04, C13: 0.024, C14: 0.004, C15: 0.004, C16: 0.0032, C17: 0.0024,
-        C18: 0.2, C19: 0.18, C20: 0.196, C21: 0.224, C22: 0.064, C23: 0.208, C24: 0.056, C25: 0.184,
-        C26: 0.16, C27: 0.104, C28: 0.072, C29: 0.236
-    };
-
-    const breakerValues = [20, 30, 40, 70, 100, 125, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1600, 2500];
-
-    const c1Data = [
-        { areaMin: 25, areaMax: 125, breaker: 20 },
-        { areaMin: 126, areaMax: 175, breaker: 30 },
-        { areaMin: 176, areaMax: 250, breaker: 40 },
-        { areaMin: 251, areaMax: 325, breaker: 50 },
-        { areaMin: 326, areaMax: 475, breaker: 70 },
-        { areaMin: 476, areaMax: 725, breaker: 100 },
-        { areaMin: 726, areaMax: 900, breaker: 125 },
-        { areaMin: 901, areaMax: 1125, breaker: 150 },
-        { areaMin: 1126, areaMax: 1500, breaker: 200 },
-        { areaMin: 1501, areaMax: 1900, breaker: 250 },
-        { areaMin: 1901, areaMax: 2300, breaker: 300 },
-        { areaMin: 2301, areaMax: 3000, breaker: 400 },
-        { areaMin: 3001, areaMax: 3600, breaker: 500 },
-        { areaMin: 3601, areaMax: 4400, breaker: 600 },
-        { areaMin: 4401, areaMax: 6000, breaker: 800 }
-    ];
-
-    const c2Data = [
-        { areaMin: 25, areaMax: 75, breaker: 20 },
-        { areaMin: 76, areaMax: 125, breaker: 30 },
-        { areaMin: 126, areaMax: 175, breaker: 40 },
-        { areaMin: 176, areaMax: 225, breaker: 50 },
-        { areaMin: 226, areaMax: 325, breaker: 70 },
-        { areaMin: 326, areaMax: 475, breaker: 100 },
-        { areaMin: 476, areaMax: 600, breaker: 125 },
-        { areaMin: 601, areaMax: 725, breaker: 150 },
-        { areaMin: 726, areaMax: 1000, breaker: 200 },
-        { areaMin: 1001, areaMax: 1125, breaker: 250 },
-        { areaMin: 1126, areaMax: 1400, breaker: 300 },
-        { areaMin: 1401, areaMax: 1850, breaker: 400 },
-        { areaMin: 1851, areaMax: 2300, breaker: 500 },
-        { areaMin: 2301, areaMax: 2700, breaker: 600 },
-        { areaMin: 2701, areaMax: 3800, breaker: 800 }
-    ];
-
-    function updateDfValue(selectElement) {
-        if (!shouldCalculate) return;
-        const selectedValue = selectElement.value;
-        const dfCell = selectElement.closest('tr').querySelector('.df-value');
-        dfCell.textContent = dfValues[selectedValue] || '';
-    }
-
-    
-    
-    function updateBreakerValue(inputElement) {    if (!shouldCalculate) return;    const areaValue = parseFloat(inputElement.value) || 0;    const selectElement = inputElement.closest('tr').querySelector('select');    const selectedValue = selectElement.value;    const breakerCell = inputElement.closest('tr').querySelector('.breaker-value');    let breakerValue = 0;    if (areaValue > 0) {        if (selectedValue === 'C1') {            breakerValue = calculateBreakerForC1(areaValue);        } else if (selectedValue === 'C2') {            breakerValue = calculateBreakerForC2(areaValue);        } else if (densityFactors.hasOwnProperty(selectedValue)) {            breakerValue = calculateBreakerForOtherCategories(selectedValue, areaValue);        }    }    breakerCell.textContent = breakerValue || '';}
-    
-    
-    function calculateBreakerForC1(areaValue) {
-        return findBreaker(areaValue, c1Data, 0.116);
-    }
-
-    function calculateBreakerForC2(areaValue) {
-        return findBreaker(areaValue, c2Data, 0.172);
-    }
-
-    function findBreaker(areaValue, data, defaultDensity) {
-        for (const item of data) {
-            if (areaValue >= item.areaMin && areaValue <= item.areaMax) {
-                return item.breaker;
-            }
-        }
-        
-        const calculatedBreaker = (defaultDensity * areaValue) / 0.692;
-        
-        return closestBreakerValue(calculatedBreaker);
-    }
-
-    function calculateBreakerForOtherCategories(category, areaValue) {
-        const densityFactor = densityFactors[category];
-        const calculatedValue = (densityFactor * areaValue) / 0.692;
-
-        return closestBreakerValue(calculatedValue);
-    }
-
-    function closestBreakerValue(value) {
-        return breakerValues.find(breaker => breaker >= value) || "MRMU";
-    }
-
-    function updateCfValue(row, c1TotalMeters) {
-        if (!shouldCalculate) return;
-        const selectElement = row.querySelector('select');
-        const selectedValue = selectElement.value;
-        const cfCell = row.querySelector('.cf-value');
-        if (selectedValue === 'C2') {
-            cfCell.textContent = '1';
-        } else if (selectedValue === 'C1' && c1TotalMeters > 1) {
-            const cf = (0.67 + (0.33 / Math.sqrt(c1TotalMeters))) / 1.25;
-            cfCell.textContent = cf.toFixed(3);
-        } else {
-            cfCell.textContent = '1';
-        }
-    }
-
-    function addFacility() {
-        const tbody = document.querySelector('tbody');
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td></td>
-            <td><input type="number" min="0"></td>
-            <td>
-                <select onchange="updateDfValue(this)">
-                    <option value="">اختر الفئة</option>
-                    <option value="C1">C1</option>
-                    <option value="C2">C2</option>
-                    <option value="C3">C3</option>
-                    <option value="C4">C4</option>
-                    <option value="C5">C5</option>
-                    <option value="C6">C6</option>
-                    <option value="C7">C7</option>
-                    <option value="C8">C8</option>
-                    <option value="C9">C9</option>
-                    <option value="C10">C10</option>
-                    <option value="C11">C11</option>
-                    <option value="C12">C12</option>
-                    <option value="C13">C13</option>
-                    <option value="C14">C14</option>
-                    <option value="C15">C15</option>
-                    <option value="C16">C16</option>
-                    <option value="C17">C17</option>
-                    <option value="C18">C18</option>
-                    <option value="C19">C19</option>
-                    <option value="C20">C20</option>
-                    <option value="C21">C21</option>
-                    <option value="C22">C22</option>
-                    <option value="C23">C23</option>
-                    <option value="C24">C24</option>
-                    <option value="C25">C25</option>
-                    <option value="C26">C26</option>
-                    <option value="C27">C27</option>
-                    <option value="C28">C28</option>
-                    <option value="C29">C29</option>
-                </select>
-            </td>
-            <td>
-                <select>
-                    <option value="380">380</option>
-                    <option value="220">220</option>
-                </select>
-            </td>
-            <td><input type="number" min="0" onchange="updateBreakerValue(this)"></td>
-            <td class="breaker-value"></td>
-            <td class="df-value"></td>
-            <td class="cf-value"></td>
-            <td class="cdl-value"></td>
-            <td><button class="delete-btn" onclick="deleteRow(this)">حذف</button></td>
-        `;
-        tbody.appendChild(newRow);
-        updateRowNumbers();
-    }
-
-    function deleteRow(button) {
-        const row = button.closest('tr');
-        row.remove();
-        updateRowNumbers();
-    }
-
-    function updateRowNumbers() {
-        const rows = document.querySelectorAll('tbody tr');
-        rows.forEach((row, index) => {
-            const cell = row.querySelector('td:first-child');
-            cell.textContent = index + 1;
-        });
-    }
-
-    function calculateValues() {
-        shouldCalculate = true;
-        const rows = document.querySelectorAll('tbody tr');
-        let c1TotalMeters = 0;
-
-        rows.forEach(row => {
-            const meters = parseFloat(row.querySelector('td:nth-child(2) input').value) || 0;
-            const areaValue = parseFloat(row.querySelector('td:nth-child(5) input').value) || 0;
-            const selectElement = row.querySelector('select');
+        function updateDfValue(selectElement) {
+            if (!shouldCalculate) return;
             const selectedValue = selectElement.value;
-            const dfCell = row.querySelector('.df-value');
-            const breakerCell = row.querySelector('.breaker-value');
-            const cfCell = row.querySelector('.cf-value');
-            const cdlCell = row.querySelector('.cdl-value');
-
-            // Update DF value
+            const dfCell = selectElement.closest('tr').querySelector('.df-value');
             dfCell.textContent = dfValues[selectedValue] || '';
+        }
 
-            // Update Breaker value
+        function updateBreakerValue(inputElement) {
+            if (!shouldCalculate) return;
+            const areaValue = parseFloat(inputElement.value) || 0;
+            const selectElement = inputElement.closest('tr').querySelector('select');
+            const selectedValue = selectElement.value;
+            const breakerCell = inputElement.closest('tr').querySelector('.breaker-value');
+            if (areaValue === 0) {
+                breakerCell.textContent = '';
+                return;
+            }
             let breakerValue = 0;
             if (selectedValue === 'C1') {
                 breakerValue = calculateBreakerForC1(areaValue);
@@ -270,24 +144,184 @@
             } else if (densityFactors.hasOwnProperty(selectedValue)) {
                 breakerValue = calculateBreakerForOtherCategories(selectedValue, areaValue);
             }
-            breakerCell.textContent = breakerValue;
+            breakerCell.textContent = breakerValue || '';
+        }
 
-            if (selectedValue === 'C1') {
-                c1TotalMeters += meters;
+        function calculateBreakerForC1(areaValue) {
+            return findBreaker(areaValue, c1Data, 0.116);
+        }
+
+        function calculateBreakerForC2(areaValue) {
+            return findBreaker(areaValue, c2Data, 0.172);
+        }
+
+        function findBreaker(areaValue, data, defaultDensity) {
+            for (const item of data) {
+                if (areaValue >= item.areaMin && areaValue <= item.areaMax) {
+                    return item.breaker;
+                }
             }
+            const calculatedBreaker = (defaultDensity * areaValue) / 0.692;
+            return closestBreakerValue(calculatedBreaker);
+        }
 
-            // Update CF value
-            updateCfValue(row, c1TotalMeters);
+        function calculateBreakerForOtherCategories(category, areaValue) {
+            const densityFactor = densityFactors[category];
+            const calculatedValue = (densityFactor * areaValue) / 0.692;
+            return closestBreakerValue(calculatedValue);
+        }
 
-            // Calculate CDL value
-            const df = parseFloat(dfCell.textContent) || 0;
-            const breaker = parseFloat(breakerCell.textContent) || 0;
-            const cf = parseFloat(cfCell.textContent) || 0;
-            const cdlValue = meters * df * breaker * cf * Math.sqrt(3) * 0.4;
-            cdlCell.textContent = cdlValue.toFixed(2) || 0;
-        });
-    }
-</script>
+        function closestBreakerValue(value) {
+            return breakerValues.find(breaker => breaker >= value) || "MRMU";
+        }
 
+        function updateCfValue(row, c1TotalMeters) {
+            if (!shouldCalculate) return;
+            const selectElement = row.querySelector('select');
+            const selectedValue = selectElement.value;
+            const cfCell = row.querySelector('.cf-value');
+            if (selectedValue === 'C2') {
+                cfCell.textContent = '1';
+            } else if (selectedValue === 'C1' && c1TotalMeters > 1) {
+                const cf = (0.67 + (0.33 / Math.sqrt(c1TotalMeters))) / 1.25;
+                cfCell.textContent = cf.toFixed(3);
+            } else {
+                cfCell.textContent = '1';
+            }
+        }
+
+        function addFacility() {
+            const tbody = document.querySelector('tbody');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td></td>
+                <td><input type="number" min="0" onchange="updateBreakerValue(this)"></td>
+                <td>
+                    <select onchange="updateDfValue(this)">
+                        <option value="">اختر الفئة</option>
+                        <option value="C1">C1</option>
+                        <option value="C2">C2</option>
+                        <option value="C3">C3</option>
+                        <option value="C4">C4</option>
+                        <option value="C5">C5</option>
+                        <option value="C6">C6</option>
+                        <option value="C7">C7</option>
+                        <option value="C8">C8</option>
+                        <option value="C9">C9</option>
+                        <option value="C10">C10</option>
+                        <option value="C11">C11</option>
+                        <option value="C12">C12</option>
+                        <option value="C13">C13</option>
+                        <option value="C14">C14</option>
+                        <option value="C15">C15</option>
+                        <option value="C16">C16</option>
+                        <option value="C17">C17</option>
+                        <option value="C18">C18</option>
+                        <option value="C19">C19</option>
+                        <option value="C20">C20</option>
+                        <option value="C21">C21</option>
+                        <option value="C22">C22</option>
+                        <option value="C23">C23</option>
+                        <option value="C24">C24</option>
+                        <option value="C25">C25</option>
+                        <option value="C26">C26</option>
+                        <option value="C27">C27</option>
+                        <option value="C28">C28</option>
+                        <option value="C29">C29</option>
+                    </select>
+                </td>
+                <td>
+                    <select>
+                        <option value="380">380</option>
+                        <option value="220">220</option>
+                    </select>
+                </td>
+                <td><input type="number" min="0" onchange="updateBreakerValue(this)"></td>
+                <td class="breaker-value"></td>
+                <td class="df-value"></td>
+                <td class="cf-value"></td>
+                <td class="cdl-value"></td>
+                <td><button class="delete-btn" onclick="deleteRow(this)">حذف</button></td>
+            `;
+            tbody.appendChild(newRow);
+            updateRowNumbers();
+        }
+
+        function deleteRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+            updateRowNumbers();
+        }
+
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach((row, index) => {
+                const cell = row.querySelector('td:first-child');
+                cell.textContent = index + 1;
+            });
+        }
+
+        function calculateValues() {
+            shouldCalculate = true;
+            const rows = document.querySelectorAll('tbody tr');
+            let c1TotalMeters = 0;
+            let totalCDL = 0;
+
+            rows.forEach(row => {
+                const meters = parseFloat(row.querySelector('td:nth-child(2) input').value) || 0;
+                const areaValue = parseFloat(row.querySelector('td:nth-child(5) input').value) || 0;
+                const selectElement = row.querySelector('select');
+                const selectedValue = selectElement.value;
+                const dfCell = row.querySelector('.df-value');
+                const breakerCell = row.querySelector('.breaker-value');
+                const cfCell = row.querySelector('.cf-value');
+                const cdlCell = row.querySelector('.cdl-value');
+
+                // Update DF value
+                dfCell.textContent = dfValues[selectedValue] || '';
+
+                // Update Breaker value
+                let breakerValue = '';
+                if (selectedValue === 'C1') {
+                    breakerValue = calculateBreakerForC1(areaValue);
+                } else if (selectedValue === 'C2') {
+                    breakerValue = calculateBreakerForC2(areaValue);
+                } else if (densityFactors.hasOwnProperty(selectedValue)) {
+                    breakerValue = calculateBreakerForOtherCategories(selectedValue, areaValue);
+                }
+                breakerCell.textContent = areaValue > 0 ? breakerValue : '';
+
+                if (selectedValue === 'C1') {
+                    c1TotalMeters += meters;
+                }
+            });
+
+            // Update CF value for each row after calculating c1TotalMeters
+            rows.forEach(row => {
+                updateCfValue(row, c1TotalMeters);
+                const df = parseFloat(row.querySelector('.df-value').textContent) || 0;
+                const breaker = parseFloat(row.querySelector('.breaker-value').textContent) || 0;
+                const cf = parseFloat(row.querySelector('.cf-value').textContent) || 0;
+                const meters = parseFloat(row.querySelector('td:nth-child(2) input').value) || 0;
+                const cdlValue = meters * df * breaker * cf * Math.sqrt(3) * 0.4;
+                row.querySelector('.cdl-value').textContent = cdlValue.toFixed(2) || 0;
+
+                totalCDL += cdlValue;
+            });
+
+            // حساب TCDL و المحول المقترح
+            const TCDL = totalCDL;
+            const المحول_المقترح = Math.round(TCDL / 0.8 / 500) * 500;
+            const نسبة_التحميل = (TCDL / المحول_المقترح) * 100;
+
+            document.getElementById('result').innerText = `
+                TCDL (KVA) = ${TCDL.toFixed(2)}
+                المحول المقترح = ${المحول_المقترح}
+                نسبة التحميل على المحول المقترح = ${نسبة_التحميل.toFixed(2)}%
+            `;
+        }
+    </script>
 </body>
 </html>
+
+
