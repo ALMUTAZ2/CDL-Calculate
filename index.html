@@ -1,10 +1,9 @@
-
-
+<!DOCTYPE html>
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جدول حساب CDL</title>
+    <title>CDL Calculator</title>
     <style>
         table {
             width: 100%;
@@ -40,9 +39,11 @@
             font-weight: bold;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <h1>جدول حساب CDL</h1>
+    <h1>CDL Calculator</h1>
     <table>
         <thead>
             <tr>
@@ -63,9 +64,8 @@
     </table>
     <button onclick="addFacility()">إضافة مرفق</button>
     <button onclick="calculateValues()">حساب القيم</button>
-
+    <button onclick="printPage()">حفظ PDF </button>
     <div class="result" id="result"></div>
-
     <script>
         let shouldCalculate = false;
         const dfValues = {
@@ -311,17 +311,34 @@
 
             // حساب TCDL و المحول المقترح
             const TCDL = totalCDL;
-            const المحول_المقترح = Math.round(TCDL / 0.8 / 500) * 500;
-            const نسبة_التحميل = (TCDL / المحول_المقترح) * 100;
+let المحول_المقترح;
 
-            document.getElementById('result').innerText = `
+if (TCDL >= 1 && TCDL <= 400) {
+    المحول_المقترح = 500;
+} else if (TCDL >= 401 && TCDL <= 800) {
+    المحول_المقترح = 1000;
+} else if (TCDL >= 801 && TCDL <= 1200) {
+    المحول_المقترح = 1500;
+    
+} else {
+    // القيم التي تتجاوز 1200 يتم تقريبها لأعلى مضاعف 500
+    المحول_المقترح = Math.ceil(TCDL / 500) * 500;
+}
+
+const نسبة_التحميل = (TCDL / المحول_المقترح) * 100;'%';
+        document.getElementById('result').innerText = `
                 TCDL (KVA) = ${TCDL.toFixed(2)}
                 المحول المقترح = ${المحول_المقترح}
                 نسبة التحميل على المحول المقترح = ${نسبة_التحميل.toFixed(2)}%
             `;
         }
+
+        function printPage() {
+            window.print();
+        }
+
+        // Initialize the page with one facility
+        addFacility();
     </script>
 </body>
 </html>
-
-
